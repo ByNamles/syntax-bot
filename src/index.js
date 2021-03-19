@@ -1,13 +1,16 @@
 const {
     Client,
     TextChannel,
-    MessageEmbed
+    MessageEmbed,
+    Collection
 } = require('discord.js')
+const fs = require("fs")
 const {
     Roles,
     Prefixes,
     QuestionMap,
-    URLMap
+    URLMap,
+    PREFIX
 } = require('./Constants')
 const dotenv = require('dotenv')
 const db = require('./drivers/SQLite3')
@@ -31,7 +34,13 @@ const run = async () => {
         }
     })
     await client.login(process.env.TOKEN).then(() => console.log(`${client.user.username} olarak giriş yapıldı.`))
+    client.commands = new Collection()
+    const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
+    for (const file of commandFiles) {
+        const command = require(`./commands/${file}`);
+        client.commands.set(command.name, command);
+    }
     const syntax = client.guilds.cache.get(process.env.SYNTAX_SERVER_ID)
     if(!syntax){
         console.log(`Sunucu bulunamadı. Bot kapatılıyor.`)
@@ -64,6 +73,32 @@ const run = async () => {
         client.user.setStatus('online'),
         setActivity()
     ])
+
+    //Command Handling
+    client.on("message", message => {
+        const args = message.content.slice(PREFIX.length).trim().split(/ +/);
+        const commandName = args.shift().toLowerCase();
+        if (!client.commands.has(commandName)) return
+        const command = client.commands.get(commandName)
+        try {
+            if (command.permissions){
+                if(message.member.hasPermission(command.permissions)){
+                    command.execute(message,args)
+                }else{
+                    return message.channel.send(`Bu komutu kullanman için ${command.permissions} yetkisine sahip olman gerekli !`)
+                }
+            }else{
+                command.execute(message,args)
+            }
+
+
+
+        }
+        catch (e){
+            //Handle Error
+            console.log(e)
+        }
+    })
 
     client.on('inviteCreate', invite => {
         invites.push(invite.code)

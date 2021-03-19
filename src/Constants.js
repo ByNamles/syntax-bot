@@ -50,6 +50,8 @@ module.exports = {
 
     DATABASES_DIR: './databases',
 
+    PREFIX: 's!',
+
     URLMap: {
         TOP_GG_VOTE_URL: 'https://top.gg/bot/716259870910840832/vote',
         ASENA_PP_URL: 'https://cdn.discordapp.com/avatars/716259870910840832/cec4e60b4816baee503a4aee87a4517c.png',
